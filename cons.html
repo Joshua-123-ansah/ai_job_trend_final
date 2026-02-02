@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>The AI Job Crisis - CSE 578</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="styles.css">
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <script src="https://unpkg.com/scrollama"></script>
+        <style>
+            .plot-container { 
+                position: relative; 
+                margin: 0 auto;
+                width: 100% !important;
+                max-width: 100%;
+                height: auto !important;
+                box-sizing: border-box;
+                overflow: visible !important;
+            }
+
+            .vis-block {
+                display: none;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                max-width: 100%;
+                height: 100%;
+                max-height: 100%;
+                opacity: 0;
+                transition: opacity 0.5s ease;
+                overflow: auto;
+                box-sizing: border-box;
+                padding: 20px;
+            }
+
+            .vis-block[style*="display: block"],
+            .vis-block[style*="display: flex"] {
+                display: flex !important;
+                flex-direction: column;
+                align-items: stretch;
+                justify-content: center;
+                opacity: 1;
+            }
+
+            .vis-block > * {
+                max-width: 100% !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                overflow: visible !important;
+            }
+
+            .vis-block .container {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 20px !important;
+                overflow: visible !important;
+                margin: 0 !important;
+            }
+
+            .vis-block[data-step="2"] {
+                justify-content: center !important;
+                align-items: center !important;
+            }
+
+            .vis-block[data-step="2"] .container {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .vis-block[data-step="3"] {
+                justify-content: center !important;
+                align-items: center !important;
+                padding: 20px !important;
+            }
+
+            .vis-block[data-step="3"] > div {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .vis-block[data-step="3"] #anti_ai_svg {
+                width: 700px !important;
+                height: 720px !important;
+                max-height: 65vh !important;
+                flex: none !important;
+            }
+
+            .vis-block[data-step="3"] .buttons {
+                flex-direction: row;
+                margin-top: 20px;
+                position: relative;
+                z-index: 100;
+            }
+
+            .vis-block[data-step="4"] .viz-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 100% !important;
+                max-height: 100% !important;
+            }
+
+            .vis-block[data-step="5"] {
+                justify-content: center !important;
+                align-items: center !important;
+            }
+
+            .vis-block[data-step="5"] .viz-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                max-height: none !important;
+            }
+
+            .vis-block[data-step="5"] .container {
+                padding: 30px !important;
+            }
+
+            .vis-block[data-step="5"] h4 {
+                margin-top: 0 !important;
+                margin-bottom: 20px !important;
+            }
+
+            .vis-block .svg_container {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                min-height: 400px;
+                overflow: visible !important;
+            }
+
+            .vis-block #task_domain_heatmap,
+            .vis-block #job-loss-chart {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: visible !important;
+            }
+
+            .vis-block .viz-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 20px !important;
+                overflow: visible !important;
+            }
+
+            .vis-block #viz {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            .vis-block #chart {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                min-height: 400px;
+                max-height: 80vh !important;
+                overflow: visible !important;
+            }
+
+            .vis-block svg {
+                overflow: visible !important;
+            }
+
+            .axisGroup { 
+                pointer-events: all; 
+            }
+            .dimension-label { 
+                font-weight: 700; 
+                cursor: grab; 
+                user-select: none; 
+                font-size: 12px; 
+            }
+            .brush .selection { 
+                fill: #666; 
+                fill-opacity: 0.08; 
+                stroke: none; 
+                pointer-events: all; 
+            }
+            .legend-label { 
+                font-weight: 700; 
+                font-size: 12px; 
+                fill: #222; 
+                text-anchor: end; 
+            }
+
+            body {
+                font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                background: #fafafa;
+                margin: 0;
+                padding: 0;
+            }
+
+            .nav-home {
+                position: fixed;
+                top: 24px;
+                left: 24px;
+                z-index: 1000;
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 10px 20px;
+                box-shadow: 0 2px 8px rgba(140, 29, 64, 0.1);
+                transition: all 0.3s ease;
+            }
+
+            .nav-home:hover {
+                box-shadow: 0 4px 12px rgba(140, 29, 64, 0.15);
+                transform: translateY(-2px);
+            }
+
+            .nav-home a {
+                text-decoration: none;
+                color: #8C1D40;
+                font-weight: 600;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .nav-home a::before {
+                content: '←';
+                font-size: 1.2rem;
+            }
+
+            .viz-container h4 {
+                margin-top: 0;
+                margin-bottom: 24px;
+                flex-shrink: 0;
+            }
+
+            .viz-container #job-loss-chart {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box;
+                overflow: visible;
+                flex: 1;
+                min-height: 0;
+            }
+
+            .viz-container #job-loss-chart svg {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 100% !important;
+                max-height: 100% !important;
+                display: block;
+            }
+
+            h1 {
+                color: #8C1D40;
+                margin-bottom: 12px;
+                font-size: 1.75rem;
+                font-weight: 700;
+            }
+
+            .subtitle {
+                color: #718096;
+                margin-bottom: 30px;
+                font-size: 0.95rem;
+            }
+
+            #chart {
+                width: 100%;
+                max-width: 100%;
+                height: 500px;
+                max-height: 70vh;
+                margin: 20px 0;
+                box-sizing: border-box;
+            }
+
+            .axis path,
+            .axis line {
+                stroke: #cbd5e0;
+            }
+
+            .axis text {
+                font-size: 11px;
+                fill: #4a5568;
+                font-family: 'Inter', sans-serif;
+            }
+
+            .grid line {
+                stroke: #e2e8f0;
+                stroke-opacity: 1;
+            }
+
+            .grid path {
+                stroke-width: 0;
+            }
+
+            .line {
+                fill: none;
+                stroke: #8C1D40;
+                stroke-width: 2.5;
+            }
+
+            .ai-line {
+                stroke: #FFC627;
+                stroke-width: 2.5;
+            }
+
+            .dot {
+                fill: #8C1D40;
+                stroke: white;
+                stroke-width: 2;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .dot:hover {
+                fill: #B81D3A;
+                stroke-width: 3;
+            }
+
+            .ai-dot {
+                fill: #FFC627;
+            }
+
+            .ai-dot:hover {
+                fill: #e6b000;
+            }
+
+            .legend {
+                display: flex;
+                gap: 32px;
+                margin: 24px 0;
+                flex-wrap: wrap;
+            }
+
+            .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 0.875rem;
+                color: #4a5568;
+            }
+
+            .legend-line {
+                width: 32px;
+                height: 3px;
+                background: #8C1D40;
+                border-radius: 2px;
+            }
+
+            .legend-line.ai {
+                background: #FFC627;
+            }
+
+            .axis-label {
+                font-size: 0.875rem;
+                fill: #4a5568;
+                font-family: 'Inter', sans-serif;
+            }
+
+            .step h1 {
+                font-size: 2.5rem;
+                font-weight: 800;
+                color: #8C1D40;
+                margin-bottom: 32px;
+                line-height: 1.2;
+                letter-spacing: -0.02em;
+            }
+
+            .step h2 {
+                font-size: 2rem;
+                font-weight: 700;
+                color: #8C1D40;
+                margin-bottom: 20px;
+                letter-spacing: -0.01em;
+            }
+
+            .step p {
+                font-size: 1.125rem;
+                line-height: 1.8;
+                color: #2d3748;
+                margin-bottom: 16px;
+                text-align: justify;
+                text-justify: inter-word;
+            }
+
+            .svg_container {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto;
+                min-height: 400px;
+                flex: 1;
+                background-color: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                box-sizing: border-box;
+                overflow: visible;
+                padding: 0;
+                position: relative;
+                display: block;
+            }
+
+            .svg_container svg {
+                width: 100% !important;
+                height: 100% !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                display: block;
+                margin: 0;
+                box-sizing: border-box;
+            }
+
+            .buttons {
+                display: flex;
+                gap: 16px;
+                margin-top: 24px;
+                justify-content: center;
+            }
+
+            .buttons .btn {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                padding: 10px 24px;
+                border-radius: 12px;
+                font-family: 'Inter', sans-serif;
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: #8C1D40;
+                cursor: pointer;
+                box-shadow: 0 2px 8px rgba(140, 29, 64, 0.1);
+                transition: all 0.3s ease;
+            }
+
+            .buttons .btn:hover {
+                background: #ffffff;
+                box-shadow: 0 4px 12px rgba(140, 29, 64, 0.15);
+                transform: translateY(-2px);
+            }
+
+            .page__header {
+                margin-bottom: 24px;
+            }
+
+            .control-group label {
+                display: block;
+                font-weight: 600;
+                color: #4a5568;
+                margin-bottom: 12px;
+                font-size: 0.95rem;
+            }
+
+            .pill-toggle {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .pill-toggle__btn {
+                padding: 8px 20px;
+                border: 2px solid #e2e8f0;
+                background: #ffffff;
+                border-radius: 24px;
+                font-family: 'Inter', sans-serif;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #4a5568;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .pill-toggle__btn:hover {
+                border-color: #8C1D40;
+                color: #8C1D40;
+            }
+
+            .pill-toggle__btn.is-active {
+                background: #8C1D40;
+                border-color: #8C1D40;
+                color: #ffffff;
+            }
+
+            .viz-container {
+                width: 100% !important;
+                max-width: 100%;
+                background: #ffffff;
+                border-radius: 12px;
+                padding: 24px;
+                box-shadow: 0 2px 8px rgba(140, 29, 64, 0.06);
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                max-height: 100%;
+            }
+
+            .viz {
+                position: relative;
+            }
+
+            .bubble-info-panel {
+                position: absolute;
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(140, 29, 64, 0.15);
+                border-radius: 16px;
+                padding: 0;
+                pointer-events: none;
+                font-family: 'Poppins', 'Inter', sans-serif;
+                z-index: 1000;
+                min-width: 280px;
+                max-width: 340px;
+                box-shadow: 0 20px 60px rgba(140, 29, 64, 0.15), 0 8px 24px rgba(0, 0, 0, 0.08);
+                transform: translateY(-10px);
+                transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .bubble-info-header {
+                background: linear-gradient(135deg, #8C1D40 0%, #B81D3A 100%);
+                padding: 18px 20px;
+                border-radius: 16px 16px 0 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .bubble-info-title {
+                color: #ffffff;
+                font-size: 1.1rem;
+                font-weight: 700;
+                margin: 0;
+                line-height: 1.3;
+                flex: 1;
+                letter-spacing: -0.01em;
+            }
+
+            .bubble-info-badge {
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                white-space: nowrap;
+                border: 1.5px solid;
+            }
+
+            .bubble-info-body {
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .bubble-info-stat {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding-bottom: 12px;
+                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            }
+
+            .bubble-info-stat:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            .bubble-info-label {
+                color: #64748b;
+                font-size: 0.875rem;
+                font-weight: 500;
+                flex: 1;
+            }
+
+            .bubble-info-value {
+                color: #1e293b;
+                font-size: 1rem;
+                font-weight: 700;
+                text-align: right;
+                white-space: nowrap;
+                margin-left: 16px;
+            }
+
+            .bubble-info-value.positive {
+                color: #059669;
+            }
+
+            .bubble-info-value.negative {
+                color: #dc2626;
+            }
+
+            .bubble-info-value.trend-job-creation {
+                color: #059669;
+            }
+
+            .bubble-info-value.trend-job-loss {
+                color: #dc2626;
+            }
+
+            h4 {
+                color: #8C1D40;
+                font-weight: 700;
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+            }
+
+            #main-vis {
+                position: relative;
+                width: 100%;
+                max-width: 100%;
+                height: 100%;
+                max-height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: visible;
+            }
+
+            @media (max-width: 768px) {
+                .hero-section {
+                    padding: 100px 20px 60px;
+                }
+
+                .hero-content h1 {
+                    font-size: 2.5rem;
+                }
+
+                .hero-content p {
+                    font-size: 1.1rem;
+                }
+
+                #scrolly {
+                    flex-direction: column;
+                }
+
+                #scroll-text {
+                    width: 100%;
+                    padding: 40px 20px;
+                }
+
+                .step {
+                    margin-bottom: 50vh;
+                    padding: 24px;
+                }
+
+                #scroll-graphic {
+                    width: 100%;
+                    height: 70vh;
+                    position: relative;
+                    top: 0;
+                    padding: 20px;
+                }
+
+                .vis-block {
+                    position: relative;
+                    top: auto;
+                    left: auto;
+                    transform: none;
+                    max-height: 100%;
+                }
+
+                .container {
+                    padding: 20px;
+                }
+
+                #chart {
+                    height: 400px;
+                    max-height: 60vh;
+                }
+
+                .plot-container {
+                    max-height: 60vh;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="nav-home">
+            <a href="index.html">Home</a>
+        </div>
+
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1>The AI Job Crisis: Trends, Risks, and a Declining Workforce</h1>
+                <p>The numbers don't lie. Over the past three decades, as artificial intelligence has moved from research labs 
+                    into workplaces, workforce layoffs have surged in parallel. This interactive exploration traces the correlation 
+                    between AI job percentage and employment displacement across industries, education levels, and job complexities. 
+                    Through line charts, scatter plots, heatmaps, and parallel coordinates, you'll witness how AI adoption has 
+                    accelerated job losses, particularly for entry and mid-level positions. The visualizations reveal a troubling 
+                    pattern: industries with high AI integration show the most severe workforce reductions. As you scroll, you'll 
+                    see how task complexity, education requirements, and salary levels interact with AI impact to create a landscape 
+                    of displacement that disproportionately affects those least able to adapt. The data tells a story of technological 
+                    advancement paired with human cost, one that demands our attention and action.</p>
+            </div>
+        </section>
+
+        <div id="scrolly">
+            <div id="scroll-text">
+                <section class="step" data-step="2" style="margin-top: 20vh;">
+                    <p>Hover over the data points in this 30-year timeline. Watch how the two lines, representing layoffs in thousands and AI job 
+                        percentage, begin to converge and climb together starting in the 2010s. Before this period, layoffs fluctuated 
+                        with economic cycles: the dotcom bubble's burst and the 2008 financial crisis created temporary spikes. But 
+                        something different happened after 2010. As the gold line representing AI job percentage begins its steep 
+                        ascent, the maroon layoff line follows in lockstep, breaking from historical patterns. The correlation becomes 
+                        unmistakable: as AI job representation grows from less than 1% to over 3%, layoffs surge from hundreds of 
+                        thousands to over a million annually.                         This visualization reveals a troubling synchronization. AI adoption 
+                        isn't just coinciding with job losses. It appears to be accelerating them. The data points cluster in the 
+                        upper-right quadrant, telling a story of technological advancement paired with workforce displacement.</p>
+                </section>
+
+                <section class="step" data-step="3">
+                    <p>Navigate through this interactive visualization using the navigation buttons. What you'll discover is a 
+                        detailed breakdown of how AI job percentage increases correlate with workforce reductions across different 
+                        time periods and sectors. The visualization reveals that each incremental rise in AI job representation 
+                        doesn't just coincide with layoffs. It appears to trigger them. As you progress through the frames, notice 
+                        how the relationship intensifies: early periods show modest correlations, but recent data demonstrates 
+                        exponential acceleration.                         The pattern suggests that companies aren't using AI to augment human capabilities. 
+                        Instead, they're using it to replace human workers entirely. Each frame in this sequence tells part of a larger story: 
+                        as AI technologies become more sophisticated and cost-effective, the economic incentive to automate human 
+                        labor becomes overwhelming. The visualization makes it clear that this isn't a temporary disruption but a 
+                        fundamental restructuring of how work gets done.</p>
+                </section>
+
+                <section class="step" data-step="4">
+                    <p>Hover over the bubbles in this scatter plot. Each bubble represents an industry positioned by its AI impact 
+                        intensity and net job change percentage. What's immediately striking is where these bubbles cluster: in the 
+                        negative growth region. Use the filter buttons to explore by impact level. You'll find that industries with 
+                        moderate to high AI involvement show the most severe job losses. The size of each bubble reflects the absolute 
+                        magnitude of change, and notice how many large bubbles sit in the negative quadrant, representing thousands 
+                        of lost positions. Industries like manufacturing, customer service, and administrative support appear as large 
+                        bubbles deep in negative territory, indicating massive workforce reductions. The visualization makes it clear 
+                        that high AI impact correlates strongly with job displacement. Even industries with low AI impact show some 
+                        negative trends, suggesting that no sector is completely safe. The filter reveals a grim pattern: as you 
+                        move from low to high AI impact, the bubbles shift further into negative territory, demonstrating that AI 
+                        intensity directly predicts job loss severity.</p>
+                </section>
+
+                <section class="step" data-step="5">
+                    <p>Examine the bar chart before you. Each bar represents the percentage of job loss by industry, and the 
+                        visualization reveals a stark reality: most industries show negative growth. The bars extend downward into 
+                        negative territory, with some sectors experiencing double-digit percentage declines.                         Education stands out 
+                        particularly. Despite requiring human judgment and interpersonal skills, it shows significant job losses.
+                        This reflects how AI is automating not just routine tasks but also administrative functions, grading systems, 
+                        and even some instructional roles. The height of each negative bar represents thousands of displaced workers. 
+                        Notice how few industries show positive growth, and those that do are often marginal. The visualization 
+                        makes it clear that job loss isn't isolated to a few vulnerable sectors. It's widespread across the economy. 
+                        The concentration of negative bars demonstrates that AI-driven displacement is a systemic issue affecting 
+                        workers across multiple industries simultaneously.</p>
+                </section>
+
+                <section class="step" data-step="6">
+                    <p>This heatmap maps task complexity against AI impact levels, and the pattern it reveals is alarming. The 
+                        darkest regions, representing the highest risk of displacement, cluster in the lower-left quadrant: low 
+                        task complexity combined with high AI impact. As you scan across the visualization, notice how the intensity 
+                        decreases as you move toward higher complexity tasks, but even moderately complex roles show significant 
+                        vulnerability. The color gradient tells a clear story: simpler jobs requiring fewer distinct tasks face 
+                        the greatest risk of automation. This makes intuitive sense. AI excels at replicating routine, repetitive 
+                        functions but struggles with roles requiring diverse skill sets and adaptive problem-solving. However, the 
+                        heatmap also reveals a troubling trend: the high-risk zone is expanding. Even jobs with moderate complexity 
+                        are showing increased AI impact, suggesting that as AI systems become more sophisticated, the threshold for 
+                        automation continues to rise. The visualization demonstrates that job complexity alone isn't sufficient 
+                        protection against displacement.</p>
+                </section>
+
+                <section class="step" data-step="7">
+                    <p>Follow the lines in this parallel coordinates plot as they trace the relationship between education levels, 
+                        job complexity, and AI impact. The visualization reveals a disturbing pattern: lines representing positions 
+                        requiring associate's and bachelor's degrees show the strongest connections to high AI impact and job loss. 
+                        These entry and mid-level positions, the traditional pathways to middle-class employment, are bearing the 
+                        brunt of AI-driven displacement. As you trace lines from lower education levels upward, notice how they 
+                        cluster in regions of high vulnerability. The plot demonstrates that AI's impact isn't evenly distributed 
+                        across the educational spectrum. While master's and PhD holders show some protection, the visualization makes 
+                        clear that this protection is relative, not absolute. Even advanced degree holders aren't immune. Their 
+                        lines still connect to areas of AI impact, though with less intensity. The concentration of lines in the 
+                        lower-education, high-impact region tells a story of economic inequality: those with less education face 
+                        disproportionate displacement, while those with more education face relative but not complete protection. 
+                        This pattern suggests that AI is creating a two-tier labor market where educational attainment becomes 
+                        increasingly critical for job security.</p>
+                </section>
+
+            </div>
+
+            <div id="scroll-graphic">
+                <div id="main-vis">
+                    <div class="vis-block" data-step="1">
+                    </div>
+
+                    <div class="vis-block" data-step="2">
+                        <div class="container">
+                            <h1>30-Year Layoff and AI Trend Analysis (1995-2024)</h1>
+                            <p class="subtitle">Hover over data points for details</p>
+                            
+                            <div class="legend">
+                                <div class="legend-item">
+                                    <div class="legend-line"></div>
+                                    <span>Layoffs (Thousands)</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-line ai"></div>
+                                    <span>AI Job Percentage (%)</span>
+                                </div>
+                            </div>
+
+                            <div id="chart"></div>
+                        </div>
+                    </div>
+
+                    <div class="vis-block" data-step="3">
+                        <div>
+                            <svg id="anti_ai_svg" class="svg_container"></svg>
+                            <div class="buttons">
+                                <button id="back_button" type="button" class="btn">Back</button>
+                                <button id="next_button" type="button" class="btn">Next</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vis-block" data-step="4">
+                        <main class="page">
+                            <header class="page__header">
+                                <section class="controls">
+                                <div class="control-group">
+                                    <label for="impact-filter">AI impact level</label>
+                                    <div id="impact-filter" class="pill-toggle" role="group">
+                                        <button data-impact="all" class="pill-toggle__btn is-active">All</button>
+                                        <button data-impact="Low" class="pill-toggle__btn">Low</button>
+                                        <button data-impact="Moderate" class="pill-toggle__btn">Moderate</button>
+                                        <button data-impact="High" class="pill-toggle__btn">High</button>
+                                    </div>
+                                </div>
+                                </section>
+                            </header>
+
+                            <section class="viz-container">
+                                <div class="viz">
+                                <svg id="viz"></svg>
+                                <div class="viz__legend" aria-hidden="true" id="legend">
+                                    <div class="legend-color">
+                                    <div class="legend-color__item" id="legend-item">
+                                        <span class="legend-color__swatch legend-color__swatch--creation"></span>
+                                        <span>Job creation</span>
+                                    </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </section>
+                        </main>
+                    </div>
+
+                    <div class="vis-block" data-step="5">
+                        <div class="viz-container">
+                            <h4>Percent Job Loss by Industry</h4>
+                            <div id="job-loss-chart"></div>
+                        </div>
+                    </div>
+
+                    <div class="vis-block" data-step="6">
+                        <div id="task_domain_heatmap"></div>
+                    </div>
+
+                    <div class="vis-block" data-step="7">
+                        <div id="con-container" class="plot-container" style="width:100%; min-height:460px; height:460px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="conclusion-section">
+            <div class="conclusion-content">
+                <h2>Conclusion</h2>
+                <p>The visualizations you've explored paint a clear and concerning picture: AI adoption is driving workforce 
+                    displacement at an accelerating rate. The 30-year timeline showed layoffs surging in lockstep with AI job 
+                    percentage. The bubble charts revealed that industries with high AI impact cluster in negative growth territory, 
+                    representing thousands of lost positions. The bar charts demonstrated widespread job losses across sectors. The 
+                    heatmap exposed how low-complexity jobs face the highest automation risk. The parallel coordinates plot revealed 
+                    that entry and mid-level positions, those requiring associate's and bachelor's degrees, bear the brunt of 
+                    displacement. The evidence is consistent across every visualization: AI integration correlates strongly with 
+                    job loss, particularly for workers with less education and in roles with lower complexity. Without immediate 
+                    intervention, including comprehensive reskilling programs, workforce transition support, and policies that protect 
+                    vulnerable workers, AI's continued proliferation will exacerbate economic inequality and leave millions 
+                    unprepared for a transformed job market. The data demands action, not just observation.</p>
+            </div>
+        </section>
+
+    <script src="graphs/task_domain_heatmap.js"></script>
+    <script src="graphs/pro_ai.js"></script>
+    <script src="graphs/anti_ai.js"></script>
+    <script src="graphs/barchart.js"></script>
+    <script src="graphs/parallel_con.js"></script>
+    <script src="graphs/line_con.js"></script>
+    <script src="graphs/script-chart-controller_cons.js" type="module"></script>
+    <script src="scrolly.js"></script>
+    </body>
+</html>

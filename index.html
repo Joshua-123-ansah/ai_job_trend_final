@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AI and the Future of Work - CSE 578</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <div class="landing-container">
+            <header class="landing-header">
+                <div class="header-content">
+                    <h1 class="main-title">AI and the Future of Work</h1>
+                    <p class="subtitle-text">Visualizing Job Creation and Job Loss</p>
+                    <div class="team-credits">
+                        <p class="team-names">Abraham Troop, Josh Ebe, Shawn Neill, Eeman Huda, Gabriel Ilano, Joshua Owusu Ansah</p>
+                        <p class="team-emails">abrahamm@asu.edu, jebe1@asu.edu, sneill1@asu.edu, ehuda@asu.edu, gilano@asu.edu, jowusuan@asu.edu</p>
+                    </div>
+                </div>
+            </header>
+
+            <main class="landing-main">
+                <section class="intro-section">
+                    <p class="intro-text">
+                        Artificial Intelligence has been a popular topic recently due to its rapid increases in advancements and popularity. Particularly, AI has been a topic of interest in the workplace because of its efficiency and ability to automate jobs. AI impact in the workplace depends heavily on industry, skill level, and business decision making. When evaluating AI's impact on jobs, it is important to consider if AI is causing growth, decline, or no impact on jobs. To determine how jobs are being impacted by AI, it is important to evaluate which job domains are impacted, how much they are impacted, and what education is required for that job.
+                    </p>
+                </section>
+
+                <section class="stories-section">
+                    <div class="story-card story-card-pro" data-story="pros">
+                        <div class="card-content">
+                            <div class="card-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <h2 class="card-title">Rethinking the AI Job Crisis</h2>
+                            <p class="card-description">Why Automation is Fueling Growth</p>
+                            <div class="card-footer">
+                                <span class="card-link">Explore Story →</span>
+                            </div>
+                        </div>
+                        <div class="card-overlay"></div>
+                    </div>
+
+                    <div class="story-card story-card-con" data-story="cons">
+                        <div class="card-content">
+                            <div class="card-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M15 9L9 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M9 9L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <h2 class="card-title">The AI Job Crisis</h2>
+                            <p class="card-description">Trends, Risks, and a Declining Workforce</p>
+                            <div class="card-footer">
+                                <span class="card-link">Explore Story →</span>
+                            </div>
+                        </div>
+                        <div class="card-overlay"></div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <script>
+            document.querySelectorAll('.story-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const story = this.dataset.story;
+                    if (story === 'pros') {
+                        window.location.href = 'pros.html';
+                    } else if (story === 'cons') {
+                        window.location.href = 'cons.html';
+                    }
+                });
+            });
+        </script>
+    </body>
+</html> 
